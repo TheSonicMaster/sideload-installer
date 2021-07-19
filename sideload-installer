@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+#
+# mcpelauncher-thesonicmaster sideload version installer.
+# Copyright (C) 2021 The Sonic Master.
+#
+# This program is free software: you can redistribute it and/or modify under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from datetime import datetime
+from getpass import getuser as whoami
+from os import listdir,popen,rename
+from pathlib import Path as path
+from platform import architecture as arch
+from requests import get as url
+from shutil import rmtree
+from sys import stderr
+from zipfile import ZipFile as zipfile
+
+timestamp = datetime.now()
+timestamp = timestamp.strftime("%Y%m%d%H%M%S")
+
+try:
+	print("Retrieving list of versions...")
+	versionlist = url("https://mcpelauncher.thesonicmaster.net/versions.txt")
+except:
+	stderr.write("Error: Unable to retrieve versions list. Exiting...\n")
+	exit(1)
+print()
+versions = versionlist.text.split()
+x = 0
+for i in versions:
+	x += 1
+	print(str(x) + ") " + i)
+
+print()
+while True:
+	try:
+		choice = int(input("Enter the number of the desired version (1-" + str(x) + "): "))
+	except ValueError:
+		continue
+	if choice < 1 or choice > x:
+		continue
+	else:
+		break
+ver = versions[choice - 1]
+arch,exectype = arch()
+if arch == "64bit":
+	arch = "x86_64"
+elif arch == "32bit":
+	arch = "x86"
+print("""
+1) AppImage
+2) Snap
+""")
+while True:
+	try:
+		choice = int(input("Enter the number of the desired install target (1-2): "))
+	except ValueError:
+		continue
+	if choice < 1 or choice > 2:
+		continue
+	elif choice == 1:
+		target = "AppImage"
+		xdir = "/home/" + whoami() + "/.local/share/mcpelauncher/versions"
+		
+		break
+	elif choice == 2:
+		target = "Snap"
+		try:
+			cmd = "readlink /home/" + whoami() + "/snap/mcpelauncher-thesonicmaster/current"
+			stream = popen(cmd)
+			output = stream.read()
+		except:
+			stderr.write("Error: Snap launcher is not installed!\n")
+			exit(1)
+		xdir = "/home/" + whoami() + "/snap/mcpelauncher-thesonicmaster/" + output + "/.local/share/mcpelauncher/versions"
+		break
+try:
+	print("\nDownloading version " + ver + " for " + arch + ". Please be patient...")
+	downloaded = url("https://gitlab.com/TheSonicMaster/sideload-versions/-/raw/master/" + arch + "/" + ver + ".zip")
+	downloadfile = "/tmp/" + str(timestamp) + ".zip"
+	with open(downloadfile,"wb") as download:
+		download.write(downloaded.content)
+except:
+	stderr.write("Unable to download the version. Exiting...\n")
+	exit(1)
+try:
+	print("Extracting downloaded version for " + target + ". Please be patient...")
+	path(xdir).mkdir(parents=True,exist_ok=True)
+	if len(listdir(xdir)) != 0:
+		moveoldversions = True
+		ydir = xdir + ".old"
+		if path(ydir).is_dir() == True:
+			rmtree(ydir)
+		rename(xdir,ydir)
+		path(xdir).mkdir()
+	with zipfile(downloadfile,"r") as extractfile:
+		extractfile.extractall(xdir)
+except:
+	stderr.write("\nUnable to extract the version. Exiting...\n")
+	exit(1)
+print("Successfully installed " + ver + " (" + arch + ") for " + target + "!")
+if moveoldversions == True:
+	print("Existing version(s) were moved to versions.old.")
