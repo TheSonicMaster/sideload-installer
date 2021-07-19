@@ -79,11 +79,11 @@ while True:
 		try:
 			cmd = "readlink /home/" + whoami() + "/snap/mcpelauncher-thesonicmaster/current"
 			stream = popen(cmd)
-			output = stream.read()
+			output = int(stream.read())
 		except:
 			stderr.write("Error: Snap launcher is not installed!\n")
 			exit(1)
-		xdir = "/home/" + whoami() + "/snap/mcpelauncher-thesonicmaster/" + output + "/.local/share/mcpelauncher/versions"
+		xdir = "/home/" + whoami() + "/snap/mcpelauncher-thesonicmaster/" + str(output) + "/.local/share/mcpelauncher/versions"
 		break
 try:
 	print("\nDownloading version " + ver + " for " + arch + ". Please be patient...")
