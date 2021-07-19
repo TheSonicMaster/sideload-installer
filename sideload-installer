@@ -94,6 +94,7 @@ try:
 except:
 	stderr.write("Unable to download the version. Exiting...\n")
 	exit(1)
+moveoldversions = False
 try:
 	print("Extracting downloaded version for " + target + ". Please be patient...")
 	path(xdir).mkdir(parents=True,exist_ok=True)
