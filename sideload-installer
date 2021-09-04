@@ -21,10 +21,16 @@ from getpass import getuser as whoami
 from os import listdir,popen,rename
 from pathlib import Path as path
 from platform import architecture as arch
-from requests import get as url
 from shutil import rmtree
 from sys import stderr
 from zipfile import ZipFile as zipfile
+
+try:
+	from requests import get as url
+except ModuleNotFoundError:
+	stderr.write("Error: Module 'requests' not found.\n")
+	stderr.write("You can install it by running 'pip3 install requests'.\n")
+	exit(1)
 
 timestamp = datetime.now()
 timestamp = timestamp.strftime("%Y%m%d%H%M%S")
@@ -72,7 +78,6 @@ while True:
 	elif choice == 1:
 		target = "AppImage"
 		xdir = "/home/" + whoami() + "/.local/share/mcpelauncher/versions"
-		
 		break
 	elif choice == 2:
 		target = "Snap"
@@ -107,9 +112,13 @@ try:
 		path(xdir).mkdir()
 	with zipfile(downloadfile,"r") as extractfile:
 		extractfile.extractall(xdir)
+except KeyboardInterrupt:
+	stderr.write("\nAborted by user. Exiting...\n")
+	exit(1)
 except:
 	stderr.write("\nUnable to extract the version. Exiting...\n")
 	exit(1)
-print("Successfully installed " + ver + " (" + arch + ") for " + target + "!")
+print("Successfully installed " + ver + " (" + arch + ") for " + target + ".")
 if moveoldversions == True:
 	print("Existing version(s) were moved to versions.old.")
+print("NOTE: You MUST restart the launcher for the version to display.")
